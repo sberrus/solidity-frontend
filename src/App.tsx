@@ -5,13 +5,25 @@ import { abi, contractAddress } from "./constants";
 const App = () => {
 	const [address, setAddress] = useState(null);
 	const [fundAmmount, setFundAmmount] = useState<string>("0");
+	const [contractBalance, setContractBalance] = useState<string>("...");
+	const [contractOwner, setContractOwner] = useState<string>("");
 
 	useEffect(() => {
 		checkIfMetamaskExists();
+		getContractBalance();
+		getContractOwner();
+		detectAccountSwitch();
 		return () => {
 			// clean up ...
 		};
 	}, []);
+
+	const detectAccountSwitch = () => {
+		window.ethereum.on("accountsChanged", function (accounts: any) {
+			// Time to reload your interface with accounts[0]!
+			setAddress(accounts[0]);
+		});
+	};
 
 	const checkIfMetamaskExists = () => {
 		if (!window.ethereum) {
@@ -32,6 +44,7 @@ const App = () => {
 			// Para evitar problemas con typescript
 			if (res && Array.isArray(res)) {
 				// Here you can access res[0]
+				console.log(res[0]);
 				setAddress(res[0]);
 			} else {
 				// Handle errors here if accounts is not valid.
@@ -109,6 +122,21 @@ const App = () => {
 		}
 	};
 
+	const withdraw = async () => {
+		if (typeof window.ethereum !== "undefined") {
+			const provider = new ethers.providers.Web3Provider(window.ethereum);
+			const signer = provider.getSigner();
+			const contract = new ethers.Contract(contractAddress, abi, signer);
+
+			try {
+				const transactionResponse = await contract.withdraw();
+				await listenForTransactionMine(transactionResponse, provider);
+			} catch (error) {
+				console.log(error);
+			}
+		}
+	};
+
 	/**
 	 * Crea un listener para que espere a la confirmación de la transacción y podemos ejecutar cierta lógica luego.
 	 * @param transactionResponse
@@ -130,10 +158,34 @@ const App = () => {
 				console.log(
 					`Transacción finalizada con ${transactionReceipt.confirmations} confirmaciones`
 				);
+				getContractBalance();
 				resolve(null);
 			});
 		});
 	};
+
+	/**
+	 * Obtiene la cantidad de ETH del fondo.
+	 */
+	const getContractBalance = async () => {
+		if (typeof window.ethereum !== "undefined") {
+			const provider = new ethers.providers.Web3Provider(window.ethereum);
+			// getBalance(address) nos permite saber rápidamente pasado un address, el balance en eth de dicha address
+			const balance = await provider.getBalance(contractAddress);
+			// ethers.utils.formatEther() realiza la tarea contraria de ...parseEther() formateando un valor WEI => ETH
+			setContractBalance(ethers.utils.formatEther(balance));
+		}
+	};
+	const getContractOwner = async () => {
+		if (typeof window.ethereum !== "undefined") {
+			const provider = new ethers.providers.Web3Provider(window.ethereum);
+			const signer = provider.getSigner();
+			const contract = new ethers.Contract(contractAddress, abi, signer);
+			const owner = await contract.i_contractOwner();
+			setContractOwner(owner.toLowerCase());
+		}
+	};
+
 	return (
 		<div>
 			<h1>Fund Me web3 App</h1>
@@ -160,6 +212,14 @@ const App = () => {
 					setFundAmmount(e.target.value);
 				}}
 			/>
+			<hr />
+			<h5>El contrato tiene actualmente: {contractBalance} ETH</h5>
+			{/* condicional para que este boton solo aparezca si eres el dueño del contrato. */}
+			{address === contractOwner && contractBalance !== "0" && (
+				<>
+					<button onClick={withdraw}>Retirar fondos</button>
+				</>
+			)}
 		</div>
 	);
 };

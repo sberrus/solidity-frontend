@@ -1,4 +1,5 @@
-export const contractAddress = "0xc0b49d5982d2531E109d6E77B5295Ab3A79A03E3";
+export const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; //hardhat contract address
+// export const contractAddress = "0xc0b49d5982d2531E109d6E77B5295Ab3A79A03E3"; // Rinkeby deployed contract
 export const abi = [
 	{
 		inputs: [],
