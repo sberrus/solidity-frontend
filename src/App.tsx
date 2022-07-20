@@ -18,19 +18,19 @@ const App = () => {
 		};
 	}, []);
 
-	const detectAccountSwitch = () => {
-		window.ethereum.on("accountsChanged", function (accounts: any) {
-			// Time to reload your interface with accounts[0]!
-			setAddress(accounts[0]);
-		});
-	};
-
 	const checkIfMetamaskExists = () => {
 		if (!window.ethereum) {
 			alert("No tienes instalado metamask");
 		} else {
 			console.log("Si hay metamask");
 		}
+	};
+
+	const detectAccountSwitch = () => {
+		window.ethereum.on("accountsChanged", function (accounts: any) {
+			// Time to reload your interface with accounts[0]!
+			setAddress(accounts[0]);
+		});
 	};
 
 	const handleConnectButton = async () => {
@@ -101,21 +101,21 @@ const App = () => {
 		 */
 		const contract = new ethers.Contract(contractAddress, abi, signer);
 
-		// Interactuando con el contrato
-		/**
-		 * Ya con el contrato bien configurado, podemos interactuar con este de la misma forma como haciamos en hardhat.
-		 *
-		 * En este caso tenemos que enviar un objeto con la propiedad "value" y enviamos, con la ayuda de las herramientas de ethers
-		 * el monto en eth al método ethers.utils.parseEther("cantidad"). Esta herramienta nos permite parsear un monto en ETH a WEI
-		 * siendo esta la unidad con la que trabajan los smartContracts.
-		 */
 		try {
+			// Interactuando con el contrato
+			/**
+			 * Ya con el contrato bien configurado, podemos interactuar con este de la misma forma como haciamos en hardhat.
+			 *
+			 * En este caso tenemos que enviar un objeto con la propiedad "value" y enviamos, con la ayuda de las herramientas de ethers
+			 * el monto en eth al método ethers.utils.parseEther("cantidad"). Esta herramienta nos permite parsear un monto en ETH a WEI
+			 * siendo esta la unidad con la que trabajan los smartContracts.
+			 */
 			const transactionResponse = await contract.fund({
 				value: ethers.utils.parseEther(fundAmmount),
 			});
 
 			await listenForTransactionMine(transactionResponse, provider);
-
+			setFundAmmount("0");
 			console.log("Done!");
 		} catch (error) {
 			console.log(error);
